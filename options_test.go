@@ -1,7 +1,6 @@
 package options_test
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"reflect"
@@ -9,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mreiferson/go-options"
+	flag "github.com/spf13/pflag"
 )
 
 // TestFlagSetDefaults verifies that default flag values are applied in the

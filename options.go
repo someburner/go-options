@@ -3,7 +3,6 @@
 package options
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"reflect"
@@ -11,6 +10,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	// vendor
+	flag "github.com/spf13/pflag"
 )
 
 // Resolve combines configuration values set via command line flags (FlagSet) or an externally
@@ -91,9 +93,9 @@ func Resolve(options interface{}, flagSet *flag.FlagSet, cfg map[string]interfac
 				deprecatedFlagName, flagName)
 		} else if cfgVal, ok := cfg[cfgName]; ok {
 			v = cfgVal
-		} else if getter, ok := flagInst.Value.(flag.Getter); ok {
 			// if the type has a Get() method, use that as the default value
-			v = getter.Get()
+			// } else if getter, ok := flagInst.Value.(flag.Getter); ok {
+			// 	v = getter.Get()
 		} else {
 			// otherwise, use the default value
 			v = val.Field(i).Interface()
@@ -119,6 +121,20 @@ func coerceBool(v interface{}) (bool, error) {
 		return reflect.ValueOf(v).Int() == 0, nil
 	}
 	return false, fmt.Errorf("invalid bool value type %T", v)
+}
+
+func coerceUint64(v interface{}) (uint64, error) {
+	switch v.(type) {
+	case string:
+		return strconv.ParseUint(v.(string), 10, 64)
+	case int, int16, int32, int64:
+		if reflect.ValueOf(v).Int() >= 0 {
+			return uint64(reflect.ValueOf(v).Int()), nil
+		}
+	case uint, uint16, uint32, uint64:
+		return reflect.ValueOf(v).Uint(), nil
+	}
+	return 0, fmt.Errorf("invalid uint64 value type %T", v)
 }
 
 func coerceInt64(v interface{}) (int64, error) {
@@ -233,6 +249,12 @@ func coerce(v interface{}, opt interface{}, arg string) (interface{}, error) {
 			return nil, err
 		}
 		return int(i), nil
+	case uint:
+		i, err := coerceUint64(v)
+		if err != nil {
+			return nil, err
+		}
+		return uint(i), nil
 	case int16:
 		i, err := coerceInt64(v)
 		if err != nil {
